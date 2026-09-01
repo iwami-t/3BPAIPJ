@@ -1,0 +1,937 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3BP AIナレッジ | 業務から引ける社内AI活用ナレッジ</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* ============================================================
+   3BP AIナレッジ 単一ファイル版スタイル
+   アクセント1色（藍 #2b5d9e）＋カテゴリ識別色
+============================================================ */
+:root{
+  --accent:#2b5d9e; --accent-dark:#1c3f6d; --accent-bg:#eef4fb;
+  --ink:#1e293b; --sub:#64748b; --faint:#94a3b8;
+  --line:#e2e8f0; --bg:#f8fafc; --card:#ffffff;
+  --heart:#e11d48;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+html{scroll-behavior:smooth;}
+body{
+  font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","BIZ UDPGothic","Yu Gothic UI",Meiryo,system-ui,sans-serif;
+  background:var(--bg); color:var(--ink); font-size:14px; line-height:1.7;
+}
+a{color:var(--accent); text-decoration:none;}
+a:hover{text-decoration:underline;}
+button{font-family:inherit; cursor:pointer;}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+mark{background:#fef08a; border-radius:3px; padding:0 2px;}
+
+/* ---- ヘッダー ---- */
+header{
+  position:sticky; top:0; z-index:40; background:rgba(255,255,255,.94);
+  border-bottom:1px solid var(--line); backdrop-filter:blur(6px);
+}
+.header-inner{max-width:1200px; margin:0 auto; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; gap:12px;}
+.logo{display:flex; align-items:center; gap:10px; color:inherit;}
+.logo:hover{text-decoration:none;}
+.logo-mark{width:34px; height:34px; border-radius:9px; background:var(--accent); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px;}
+.logo-title{font-size:14px; font-weight:700; line-height:1.2;}
+.logo-sub{font-size:10.5px; color:var(--sub);}
+nav.main{display:flex; gap:4px;}
+nav.main a{padding:8px 12px; border-radius:9px; font-size:13px; font-weight:600; color:var(--sub);}
+nav.main a:hover{background:#f1f5f9; text-decoration:none;}
+nav.main a.active{background:var(--accent-bg); color:var(--accent-dark);}
+
+main{max-width:1200px; margin:0 auto; padding:24px 16px 60px;}
+footer{max-width:1200px; margin:0 auto; padding:24px 16px 40px; text-align:center; font-size:11px; color:var(--faint);}
+
+/* ---- 検索バー ---- */
+.search-wrap{max-width:720px; margin:0 auto 6px; position:relative;}
+.search-wrap input{
+  width:100%; padding:13px 44px 13px 44px; font-size:14px; font-family:inherit;
+  border:1px solid #cbd5e1; border-radius:16px; background:var(--card);
+  box-shadow:0 1px 2px rgba(15,23,42,.05);
+}
+.search-icon{position:absolute; left:15px; top:50%; transform:translateY(-50%); color:var(--faint); pointer-events:none;}
+.search-clear{position:absolute; right:10px; top:50%; transform:translateY(-50%); border:none; background:none; color:var(--faint); font-size:16px; padding:6px 8px; border-radius:99px;}
+.search-clear:hover{background:#f1f5f9;}
+.search-hint{text-align:center; font-size:11px; color:var(--faint); margin-bottom:14px;}
+
+/* ---- ショートカットチップ ---- */
+.chips{display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin-bottom:22px;}
+.chip{
+  border:1px solid #cbd5e1; background:var(--card); color:var(--sub);
+  padding:6px 14px; border-radius:99px; font-size:12px; font-weight:600;
+}
+.chip:hover{border-color:var(--accent); color:var(--accent-dark);}
+.chip.on{background:var(--accent); border-color:var(--accent); color:#fff;}
+
+/* ---- タイル ---- */
+.crumb{font-size:12px; color:var(--sub); margin-bottom:10px; display:flex; flex-wrap:wrap; gap:4px; align-items:center;}
+.crumb button{border:none; background:none; color:var(--accent); font-size:12px; font-weight:600; padding:0;}
+.crumb button:hover{text-decoration:underline;}
+.tiles{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-bottom:26px;}
+.tile{
+  text-align:left; background:var(--card); border:1px solid var(--line); border-radius:13px;
+  padding:14px 16px; box-shadow:0 1px 2px rgba(15,23,42,.04); transition:box-shadow .15s;
+}
+.tile:hover{box-shadow:0 4px 12px rgba(15,23,42,.10);}
+.tile .bar{height:5px; width:40px; border-radius:99px; margin-bottom:8px;}
+.tile .t-name{font-weight:700; font-size:13.5px; margin-bottom:6px;}
+.tile:hover .t-name{color:var(--accent-dark);}
+.tile .t-meta{font-size:11.5px; color:var(--sub);}
+
+/* ---- レイアウト（ファセット＋結果） ---- */
+.body-grid{display:flex; gap:20px; align-items:flex-start;}
+aside.facets{width:230px; flex-shrink:0; background:var(--card); border:1px solid var(--line); border-radius:13px; padding:16px;}
+.facets h2{font-size:13px; margin-bottom:4px; display:flex; justify-content:space-between; align-items:center;}
+.facets .clear-all{border:none; background:none; color:var(--accent); font-size:11px; padding:0;}
+.facet-group{margin-top:12px;}
+.facet-group .fg-label{font-size:11px; font-weight:700; color:var(--sub); margin-bottom:5px;}
+.facet-group label{display:flex; align-items:center; gap:7px; font-size:12px; padding:2px 0; cursor:pointer;}
+.facet-group label .cnt{margin-left:auto; color:var(--faint); font-size:11px;}
+.facet-liked{margin-top:14px; padding-top:12px; border-top:1px solid #f1f5f9;}
+.results{flex:1; min-width:0;}
+.results-head{display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px;}
+.results-head .n{font-weight:700;}
+.results-head select{padding:6px 8px; border:1px solid #cbd5e1; border-radius:8px; font-size:12px; background:var(--card); font-family:inherit;}
+.cards{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px;}
+
+/* ---- ナレッジカード ---- */
+.card{background:var(--card); border:1px solid var(--line); border-radius:13px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 1px 2px rgba(15,23,42,.04); transition:box-shadow .15s;}
+.card:hover{box-shadow:0 4px 12px rgba(15,23,42,.10);}
+.card .cat-bar{height:4px;}
+.card .card-body{padding:13px 15px 12px; display:flex; flex-direction:column; gap:7px; flex:1;}
+.card .c-head{display:flex; justify-content:space-between; gap:8px; align-items:flex-start;}
+.card .c-title{
+  font-size:13.5px; font-weight:700; line-height:1.45; color:var(--ink);
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+}
+.card .c-title:hover{color:var(--accent-dark); text-decoration:none;}
+.card .c-path{font-size:11px; color:var(--sub);}
+.card .c-catch{font-size:12px; color:#475569; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
+.card .c-foot{margin-top:auto; border-top:1px solid #f1f5f9; padding-top:9px; display:flex; justify-content:space-between; align-items:center; gap:8px;}
+
+/* ---- いいね（ハート）ボタン ---- */
+.like-btn{
+  display:inline-flex; align-items:center; gap:5px; border:1px solid #e2e8f0;
+  background:var(--card); color:var(--faint); border-radius:99px;
+  padding:5px 12px; font-size:12.5px; font-weight:600; transition:all .15s;
+}
+.like-btn:hover{border-color:#fda4af; color:var(--heart);}
+.like-btn .hn{font-size:11px;}
+.like-btn.liked{background:#fff1f2; border-color:#fda4af; color:var(--heart);}
+.like-btn.liked .hi{animation:pop .25s ease;}
+@keyframes pop{ 0%{transform:scale(.6);} 60%{transform:scale(1.35);} 100%{transform:scale(1);} }
+
+/* ---- バッジ ---- */
+.badges{display:flex; flex-wrap:wrap; gap:5px;}
+.badge{display:inline-block; font-size:10.5px; font-weight:600; padding:2px 9px; border-radius:99px; background:#f1f5f9; color:#475569; white-space:nowrap;}
+.badge.outline{background:var(--card); border:1px solid #cbd5e1;}
+.badge.free{background:#d1fae5; color:#065f46;}
+.badge.paid{background:#ffedd5; color:#9a3412;}
+.badge.phase{background:var(--accent-bg); color:var(--accent-dark);}
+
+/* ---- ボタン ---- */
+.btn{display:inline-flex; align-items:center; gap:6px; border:none; border-radius:9px; font-weight:600; font-size:12px; padding:7px 13px; background:var(--accent); color:#fff; transition:background .15s;}
+.btn:hover{background:var(--accent-dark);}
+.btn.secondary{background:var(--card); border:1px solid #cbd5e1; color:#475569;}
+.btn.secondary:hover{background:#f1f5f9;}
+
+/* ---- 0件表示 ---- */
+.empty{border:2px dashed #cbd5e1; border-radius:13px; background:var(--card); padding:36px 20px; text-align:center;}
+.empty p{font-size:13px; font-weight:600;}
+.empty .sub{font-size:12px; color:var(--sub); font-weight:400; margin-top:6px;}
+.empty .cards{margin-top:16px; text-align:left;}
+
+/* ---- 詳細ページ ---- */
+.detail{max-width:880px; margin:0 auto; display:flex; flex-direction:column; gap:20px;}
+.detail h1{font-size:20px; line-height:1.5;}
+.detail .lead{font-size:14px; color:#334155; background:var(--accent-bg); border-radius:11px; padding:12px 16px;}
+.ba-grid{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
+.ba{background:var(--card); border:1px solid var(--line); border-radius:13px; padding:18px;}
+.ba h2{font-size:11px; letter-spacing:.06em; text-transform:uppercase; color:var(--faint); margin-bottom:8px;}
+.ba.after h2{color:var(--accent);}
+.ba p{font-size:13px;}
+
+/* プロンプトブロック */
+.prompt-box{border:1px solid #334155; border-radius:13px; background:#0f172a; overflow:hidden;}
+.prompt-head{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 14px; border-bottom:1px solid #334155;}
+.prompt-head span{font-size:11px; color:#94a3b8;}
+.prompt-head b{color:#fcd34d;}
+.prompt-box pre{
+  max-height:480px; overflow:auto; padding:16px; white-space:pre-wrap; word-break:break-word;
+  color:#f1f5f9; font-size:12.5px; line-height:1.8; font-family:inherit;
+}
+.pv{background:#fef3c7; color:#92400e; border-radius:4px; padding:0 4px; font-weight:700;}
+.no-prompt{border:1px dashed #cbd5e1; border-radius:13px; background:var(--card); padding:18px; font-size:13px; color:var(--sub);}
+
+/* アコーディオン（details/summary） */
+details.acc{background:var(--card); border:1px solid var(--line); border-radius:13px; overflow:hidden;}
+details.acc summary{
+  list-style:none; cursor:pointer; padding:12px 16px; font-size:13px; font-weight:700;
+  display:flex; justify-content:space-between; align-items:center;
+}
+details.acc summary::-webkit-details-marker{display:none;}
+details.acc summary::after{content:"▾"; color:var(--faint); transition:transform .15s;}
+details.acc[open] summary::after{transform:rotate(180deg);}
+details.acc .acc-body{border-top:1px solid #f1f5f9; padding:12px 16px; font-size:13px; white-space:pre-wrap; word-break:break-word;}
+
+.section-label{font-size:13px; font-weight:700; margin-bottom:10px;}
+.src-note{font-size:11.5px; color:var(--faint);}
+
+/* ---- ダッシュボード ---- */
+.dash{max-width:960px; margin:0 auto; display:flex; flex-direction:column; gap:22px;}
+.stat-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px;}
+.stat{background:var(--card); border:1px solid var(--line); border-radius:13px; padding:18px; display:flex; align-items:center; gap:14px;}
+.stat .ic{width:44px; height:44px; border-radius:12px; background:var(--accent-bg); color:var(--accent); display:flex; align-items:center; justify-content:center; font-size:18px;}
+.stat .lbl{font-size:11.5px; color:var(--sub);}
+.stat .val{font-size:20px; font-weight:700;}
+.chart-card{background:var(--card); border:1px solid var(--line); border-radius:13px; padding:18px;}
+.hbar-row{display:grid; grid-template-columns:170px 1fr 55px; gap:10px; align-items:center; margin-bottom:9px; font-size:12px;}
+.hbar-track{background:#f1f5f9; border-radius:99px; height:16px; overflow:hidden;}
+.hbar-fill{height:100%; border-radius:99px; min-width:4px;}
+.hbar-val{text-align:right; font-weight:700; color:#475569; white-space:nowrap;}
+.legend{display:flex; flex-wrap:wrap; gap:14px; font-size:11.5px; color:var(--sub);}
+.legend .dot{display:inline-block; width:10px; height:10px; border-radius:99px; margin-right:5px; vertical-align:-1px;}
+
+/* ---- ガイド ---- */
+.guide{max-width:760px; margin:0 auto; display:flex; flex-direction:column; gap:28px;}
+.step-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px;}
+.step{background:var(--card); border:1px solid var(--line); border-radius:13px; padding:18px;}
+.step .num{width:36px; height:36px; border-radius:11px; background:var(--accent-bg); color:var(--accent); font-weight:700; display:flex; align-items:center; justify-content:center; margin-bottom:10px;}
+.step h3{font-size:13.5px; margin-bottom:5px;}
+.step p{font-size:12px; color:var(--sub);}
+.warn{border:2px solid #fda4af; background:#fff1f2; border-radius:13px; padding:18px;}
+.warn h2{font-size:14px; color:#9f1239; margin-bottom:8px;}
+.warn ul{padding-left:20px; font-size:13px; color:#881337;}
+.warn li{margin-bottom:5px;}
+.format-box{background:var(--card); border:1px solid var(--line); border-radius:13px; overflow:hidden;}
+.format-head{display:flex; justify-content:space-between; align-items:center; padding:8px 14px; border-bottom:1px solid #f1f5f9;}
+.format-head span{font-size:11.5px; color:var(--sub); font-weight:600;}
+.format-box pre{max-height:380px; overflow:auto; padding:14px 16px; white-space:pre-wrap; word-break:break-word; font-size:12px; color:#475569; font-family:inherit;}
+
+/* ---- トースト ---- */
+#toast{
+  position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:#0f172a; color:#fff; font-size:13px; padding:10px 20px; border-radius:99px;
+  box-shadow:0 8px 24px rgba(15,23,42,.3); opacity:0; pointer-events:none; transition:all .25s; z-index:50;
+}
+#toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+
+.back-link{font-size:13px; font-weight:600;}
+
+/* ---- レスポンシブ ---- */
+@media (max-width:900px){
+  .body-grid{flex-direction:column;}
+  aside.facets{width:100%;}
+  .ba-grid{grid-template-columns:1fr;}
+  .hbar-row{grid-template-columns:110px 1fr 50px; font-size:11px;}
+  .logo-sub{display:none;}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important; animation:none!important;}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <a class="logo" href="#/">
+      <span class="logo-mark">3BP</span>
+      <span>
+        <span class="logo-title">3BP AIナレッジ</span><br>
+        <span class="logo-sub">業務から引ける、局のAI活用資産</span>
+      </span>
+    </a>
+    <nav class="main" aria-label="メインナビゲーション">
+      <a href="#/" data-nav="home">業務から探す</a>
+      <a href="#/dashboard" data-nav="dashboard">ダッシュボード</a>
+      <a href="#/guide" data-nav="guide">使い方・ガイド</a>
+    </nav>
+  </div>
+</header>
+
+<main id="app" aria-live="polite"></main>
+
+<footer>電通 第3ビジネスプロデュース局 AI活用推進PJ ｜ 社内限り・クライアント機密の入力ルールはガイドを参照</footer>
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   ナレッジデータ（3BP_AI活用推進_統合リスト.xlsx より生成）
+   ─ 追加・修正はこの DATA 配列を編集するだけでOKです。
+   ─ 1件分は { で始まり } で終わります。コピーして末尾に追加し、
+     間のカンマ , を忘れないでください。
+   ─ 項目：id / phase / category / taskGroup / title(業務名) /
+     catch(ひとこと概要) / hasPrompt / before / after / memo /
+     tips / tool / license / source / prompt(全文)
+============================================================ */
+let DATA = [];
+const DATA_XLSX_PATH = "./3BP_AIナレッジ_データ.xlsx";
+const DATA_SHEET_NAME = "ナレッジ一覧";
+
+function rowsToData(rows){
+  return rows.map(r=>({
+    id: String(r["id（管理番号）"] ?? r["id"] ?? "").trim(),
+    phase: String(r["phase（フェーズ）"] ?? r["phase"] ?? "").trim(),
+    category: String(r["category（カテゴリ）"] ?? r["category"] ?? "").trim(),
+    taskGroup: String(r["taskGroup（業務大項目）"] ?? r["taskGroup"] ?? "").trim(),
+    title: String(r["title（業務名）"] ?? r["title"] ?? "").trim(),
+    "catch": String(r["catch（ひとこと概要）"] ?? r["catch"] ?? "").trim(),
+    hasPrompt: String(r["hasPrompt（プロンプト有無）"] ?? r["hasPrompt"] ?? "").trim(),
+    before: String(r["before（AI活用前）"] ?? r["before"] ?? "").trim(),
+    after: String(r["after（AI活用後）"] ?? r["after"] ?? "").trim(),
+    memo: String(r["memo（成果物・結果メモ）"] ?? r["memo"] ?? "").trim(),
+    tips: String(r["tips（工夫・課題・コメント）"] ?? r["tips"] ?? "").trim(),
+    tool: String(r["tool（対応AIツール／複数はカンマ区切り）"] ?? r["tool"] ?? "")
+            .split(/[、,]/).map(s=>s.trim()).filter(Boolean),
+    license: String(r["license（ライセンス）"] ?? r["license"] ?? "").trim(),
+    source: String(r["source（出典）"] ?? r["source"] ?? "").trim(),
+    prompt: String(r["prompt（プロンプト全文）"] ?? r["prompt"] ?? "").trim()
+  })).filter(k=>k.id);
+}
+
+/* ---- カテゴリ定義（表示順と識別色） ---- */
+const CATS = ["提案業務","ルーティーン・オペレーション業務","メディア","企画","管理・総務"];
+const CAT_HEX = {
+  "提案業務":"#0ea5e9",
+  "ルーティーン・オペレーション業務":"#10b981",
+  "メディア":"#8b5cf6",
+  "企画":"#f59e0b",
+  "管理・総務":"#f43f5e"
+};
+
+/* ---- ファセット定義 ---- */
+const FACETS = [
+  {key:"cat",     label:"カテゴリ",       get:k=>[k.category]},
+  {key:"group",   label:"業務大項目",     get:k=>[k.taskGroup]},
+  {key:"tool",    label:"ツール",         get:k=>k.tool},
+  {key:"license", label:"ライセンス",     get:k=>[k.license]},
+  {key:"phase",   label:"フェーズ",       get:k=>[k.phase]},
+  {key:"hp",      label:"プロンプト",     get:k=>[k.hasPrompt]}
+];
+const SHORTCUTS = ["メール","議事録","提案資料","スケジュール調整","リサーチ","品質チェック"];
+
+/* ============================================================
+   いいね（ハート）機能
+   ─ このファイルはローカル実行のため、いいねは各自のブラウザに
+     保存されます（localStorage）。他の人のいいね数とは合算されません。
+============================================================ */
+const LIKE_KEY = "3bp_knowledge_likes";
+let likesMem = {}; // localStorageが使えない環境向けのフォールバック
+function loadLikes(){
+  try{ return JSON.parse(localStorage.getItem(LIKE_KEY)||"{}"); }
+  catch(e){ return likesMem; }
+}
+function saveLikes(obj){
+  try{ localStorage.setItem(LIKE_KEY, JSON.stringify(obj)); }
+  catch(e){ likesMem = obj; }
+}
+function isLiked(id){ return !!loadLikes()[id]; }
+function likedCount(){ return Object.keys(loadLikes()).length; }
+function likeBtnHtml(id, withLabel){
+  const on = isLiked(id);
+  return `<button class="like-btn ${on?"liked":""}" data-like-id="${id}"
+            onclick="toggleLike('${id}')" aria-pressed="${on}"
+            aria-label="この事例にいいねする">
+            <span class="hi" aria-hidden="true">${on?"♥":"♡"}</span>${withLabel?`<span class="hn">いいね</span>`:""}
+          </button>`;
+}
+function toggleLike(id){
+  const likes = loadLikes();
+  const nowOn = !likes[id];
+  if(nowOn) likes[id] = 1; else delete likes[id];
+  saveLikes(likes);
+  // 全ページ再描画せず、同じidのボタンだけをその場で更新（スクロール位置を保つ）
+  document.querySelectorAll(`[data-like-id="${id}"]`).forEach(btn=>{
+    btn.classList.toggle("liked", nowOn);
+    btn.setAttribute("aria-pressed", nowOn);
+    btn.querySelector(".hi").textContent = nowOn ? "♥" : "♡";
+  });
+  showToast(nowOn ? "♥ いいねしました" : "いいねを取り消しました");
+}
+
+/* ============================================================
+   ユーティリティ
+============================================================ */
+// カタカナ→ひらがな・全角→半角・小文字化（表記ゆれ吸収）
+function norm(s){
+  return s.normalize("NFKC")
+    .replace(/[\u30a1-\u30f6]/g, ch => String.fromCharCode(ch.charCodeAt(0)-0x60))
+    .toLowerCase();
+}
+function esc(s){
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+function highlight(text, q){
+  const nq = norm(q.trim());
+  if(!nq) return esc(text);
+  const nt = norm(text);
+  let out="", cur=0, idx=nt.indexOf(nq);
+  while(idx!==-1){
+    out += esc(text.slice(cur,idx)) + "<mark>" + esc(text.slice(idx,idx+nq.length)) + "</mark>";
+    cur = idx+nq.length;
+    idx = nt.indexOf(nq,cur);
+  }
+  return out + esc(text.slice(cur));
+}
+function showToast(msg){
+  const t=document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show"); clearTimeout(showToast._tm);
+  showToast._tm = setTimeout(()=>t.classList.remove("show"), 2000);
+}
+
+// 検索用の正規化済みテキストを事前計算
+// ─ DATAはExcelから非同期で読み込むため、読み込み完了直後（loadData内）に
+//   呼び出す関数として定義しておく（以前はDATA直書き直後に即実行していた）。
+function buildSearchIndex(){
+  DATA.forEach(k=>{
+    k._title = norm(k.title); k._catch = norm(k.catch); k._group = norm(k.taskGroup);
+    k._tags = norm(k.tool.join(" ")+" "+k.phase);
+    k._body = norm([k.before,k.after,k.prompt,k.tips,k.memo,k.category].join(" "));
+  });
+}
+
+// あいまい検索：フィールドごとに重み付けした部分一致スコアリング（スペース区切りAND）
+function searchItems(q){
+  const nq = norm(q.trim());
+  if(!nq) return [...DATA];
+  const words = nq.split(/\s+/).filter(Boolean);
+  return DATA.map(k=>{
+    let score=0;
+    for(const w of words){
+      let s=0;
+      if(k._title.includes(w)) s+=6;
+      if(k._catch.includes(w)) s+=5;
+      if(k._group.includes(w)) s+=4;
+      if(k._tags.includes(w))  s+=4;
+      if(k._body.includes(w))  s+=1;
+      if(s===0) return null;
+      score+=s;
+    }
+    return {k,score};
+  }).filter(Boolean).sort((a,b)=>b.score-a.score).map(r=>r.k);
+}
+
+// 0件時の「近い業務」サジェスト（バイグラム一致率）
+function suggestNearby(q, limit=3){
+  const nq = norm(q.trim());
+  if(nq.length<2) return [];
+  const grams=[]; for(let i=0;i<nq.length-1;i++) grams.push(nq.slice(i,i+2));
+  return DATA.map(k=>{
+    const hay = k._title+" "+k._catch+" "+k._group+" "+k._tags;
+    const hit = grams.filter(g=>hay.includes(g)).length;
+    return {k, r: hit/grams.length};
+  }).filter(x=>x.r>=0.3).sort((a,b)=>b.r-a.r).slice(0,limit).map(x=>x.k);
+}
+
+// クリップボードコピー（file://直開きでも動くようフォールバック付き）
+function copyText(text){
+  const done = ()=> showToast("✓ プロンプトをコピーしました");
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(text).then(done).catch(()=>fallbackCopy(text,done));
+  } else { fallbackCopy(text,done); }
+}
+function fallbackCopy(text,done){
+  const ta=document.createElement("textarea");
+  ta.value=text; ta.style.position="fixed"; ta.style.opacity="0";
+  document.body.appendChild(ta); ta.select();
+  try{ document.execCommand("copy"); }finally{ document.body.removeChild(ta); }
+  done();
+}
+function copyPrompt(id){ const k=DATA.find(x=>x.id===id); if(k && k.prompt) copyText(k.prompt); }
+
+/* ============================================================
+   ハッシュルーティング（#/?q=...&tool=... 形式。URL共有可能）
+============================================================ */
+function parseHash(){
+  const h = location.hash.replace(/^#\/?/,"");
+  const [path, qs=""] = h.split("?");
+  const params = new URLSearchParams(qs);
+  return {path, params};
+}
+function buildHash(path, params){
+  const qs = params.toString();
+  return "#/" + path + (qs ? "?"+qs : "");
+}
+function setParam(key, value){
+  const {path, params} = parseHash();
+  if(value===null || value==="") params.delete(key); else params.set(key, value);
+  location.hash = buildHash(path.startsWith("knowledge")?"":path, params);
+}
+function toggleFacet(key, value){
+  const {params} = parseHash();
+  const cur = new Set((params.get(key)||"").split(",").filter(Boolean));
+  cur.has(value) ? cur.delete(value) : cur.add(value);
+  setParam(key, [...cur].join(","));
+}
+function clearAll(){ location.hash = "#/"; }
+
+/* ============================================================
+   部品HTML
+============================================================ */
+function badgesHtml(k){
+  return `<span class="badges">
+    ${k.tool.map(t=>`<span class="badge outline">${esc(t)}</span>`).join("")}
+    <span class="badge ${k.license==="無償版でも可"?"free":"paid"}">${esc(k.license)}</span>
+    <span class="badge phase">${esc(k.phase)}</span>
+  </span>`;
+}
+function cardHtml(k, q=""){
+  const hex = CAT_HEX[k.category] || "#64748b";
+  const action = k.prompt
+    ? `<button class="btn" onclick="copyPrompt('${k.id}')" aria-label="${esc(k.title)}のプロンプトをコピー">📋 プロンプトをコピー</button>`
+    : `<a class="btn secondary" href="#/knowledge/${k.id}">詳細を見る</a>`;
+  return `<article class="card">
+    <div class="cat-bar" style="background:${hex}"></div>
+    <div class="card-body">
+      <div class="c-head">
+        <a class="c-title" href="#/knowledge/${k.id}">${highlight(k.title,q)}</a>
+        <span class="badge" style="background:${hex}1a;color:${hex}">${esc(k.category)}</span>
+      </div>
+      <div class="c-path">${highlight(k.taskGroup,q)}</div>
+      <p class="c-catch">${highlight(k.catch,q)}</p>
+      ${badgesHtml(k)}
+      <div class="c-foot">
+        ${likeBtnHtml(k.id,false)}
+        ${action}
+      </div>
+    </div>
+  </article>`;
+}
+
+/* ============================================================
+   ホーム画面
+============================================================ */
+function renderHome(params){
+  const q = params.get("q")||"";
+  const sort = params.get("sort")||"std";
+  const likedOnly = params.get("liked")==="1";
+  const sel = {};
+  FACETS.forEach(f=> sel[f.key] = (params.get(f.key)||"").split(",").filter(Boolean));
+  const drillTask = params.get("task")||"";
+
+  // ①検索 → ②ファセットAND絞り込み → ③並び替え
+  let items = searchItems(q);
+  for(const f of FACETS){
+    if(sel[f.key].length===0) continue;
+    items = items.filter(k=> sel[f.key].every(v=> f.get(k).includes(v)));
+  }
+  if(drillTask) items = items.filter(k=>k.title===drillTask);
+  if(likedOnly) items = items.filter(k=>isLiked(k.id));
+  if(sort==="liked"){
+    items = [...items].sort((a,b)=> (isLiked(b.id)?1:0)-(isLiked(a.id)?1:0));
+  }
+
+  const drillCat = sel.cat.length===1 ? sel.cat[0] : null;
+  const drillGroup = sel.group.length===1 ? sel.group[0] : null;
+  const hasCond = q || drillTask || likedOnly || FACETS.some(f=>sel[f.key].length>0);
+
+  /* --- タイル（カテゴリ → 業務大項目 の2階層ドリルダウン） --- */
+  let tiles="";
+  if(!q){
+    let crumb="";
+    if(drillCat||drillGroup){
+      crumb = `<div class="crumb">
+        <button onclick="clearAll()">すべての業務</button>
+        ${drillCat?`<span>＞</span><button onclick="setParam('group',null)">${esc(drillCat)}</button>`:""}
+        ${drillGroup?`<span>＞</span><b>${esc(drillGroup)}</b>`:""}
+      </div>`;
+    }
+    if(!drillCat){
+      tiles = CATS.filter(c=>DATA.some(k=>k.category===c)).map(cat=>{
+        const its = DATA.filter(k=>k.category===cat);
+        const hex = CAT_HEX[cat];
+        return `<button class="tile" onclick="setParam('cat','${esc(cat)}')">
+          <div class="bar" style="background:${hex}"></div>
+          <div class="t-name">${esc(cat)}</div>
+          <div class="t-meta"><span class="badge" style="background:${hex}1a;color:${hex}">${its.length}件</span></div>
+        </button>`;
+      }).join("");
+    } else if(!drillGroup){
+      const map = new Map();
+      DATA.filter(k=>k.category===drillCat).forEach(k=>{
+        map.set(k.taskGroup, (map.get(k.taskGroup)||0)+1);
+      });
+      tiles = [...map.entries()].sort((a,b)=>b[1]-a[1]).map(([name,n])=>`
+        <button class="tile" onclick="setParam('group','${esc(name)}')">
+          <div class="t-name">📁 ${esc(name)}</div>
+          <div class="t-meta">${n}件</div>
+        </button>`).join("");
+    }
+    tiles = crumb + (tiles?`<div class="tiles">${tiles}</div>`:"");
+  }
+
+  /* --- ファセットサイドバー --- */
+  const facetsHtml = FACETS.map(f=>{
+    const counts = new Map();
+    DATA.forEach(k=> f.get(k).forEach(v=> counts.set(v,(counts.get(v)||0)+1)));
+    const opts = [...counts.entries()].sort((a,b)=>b[1]-a[1]).map(([v,c])=>`
+      <label>
+        <input type="checkbox" ${sel[f.key].includes(v)?"checked":""}
+               onchange="toggleFacet('${f.key}','${esc(v)}')">
+        <span>${esc(v)}</span><span class="cnt">${c}</span>
+      </label>`).join("");
+    return `<div class="facet-group"><div class="fg-label">${f.label}</div>${opts}</div>`;
+  }).join("");
+  const likedFacet = `<div class="facet-liked">
+    <label style="display:flex;align-items:center;gap:7px;font-size:12px;cursor:pointer">
+      <input type="checkbox" ${likedOnly?"checked":""} onchange="setParam('liked', this.checked?'1':null)">
+      <span style="color:var(--heart);font-weight:700">♥ いいねした事例のみ</span>
+      <span class="cnt" style="margin-left:auto;color:var(--faint);font-size:11px">${likedCount()}</span>
+    </label>
+  </div>`;
+
+  /* --- 結果一覧 or 0件表示 --- */
+  let body;
+  if(items.length>0){
+    body = `<div class="cards">${items.map(k=>cardHtml(k,q)).join("")}</div>`;
+  } else {
+    const near = q ? suggestNearby(q) : [];
+    body = `<div class="empty">
+      <p>該当するナレッジが見つかりませんでした</p>
+      ${near.length?`<div class="sub">近い業務のナレッジ：</div><div class="cards">${near.map(k=>cardHtml(k)).join("")}</div>`:""}
+      <div class="sub" style="margin-top:14px">この業務のナレッジをお持ちの方は、<a href="#/guide">ガイドの投稿フォーマット</a>からぜひ登録をお願いします。</div>
+    </div>`;
+  }
+
+  return `
+    <div class="search-wrap">
+      <span class="search-icon" aria-hidden="true">🔍</span>
+      <input id="search" type="search" value="${esc(q)}" aria-label="ナレッジ検索"
+             placeholder="業務名・キーワードで検索（例：議事録、日程調整）">
+      ${q?`<button class="search-clear" onclick="setParam('q',null)" aria-label="検索をクリア">✕</button>`:""}
+    </div>
+    <div class="search-hint">「/」キーで検索、「Esc」でクリア</div>
+    <div class="chips">
+      ${SHORTCUTS.map(s=>`<button class="chip ${q===s?"on":""}" onclick="setParam('q','${s}')">${s}</button>`).join("")}
+    </div>
+    ${tiles}
+    <div class="body-grid">
+      <aside class="facets" aria-label="絞り込み">
+        <h2>絞り込み ${hasCond?`<button class="clear-all" onclick="clearAll()">すべて解除</button>`:""}</h2>
+        ${likedFacet}
+        ${facetsHtml}
+      </aside>
+      <section class="results" aria-label="検索結果">
+        <div class="results-head">
+          <span><span class="n">${items.length}</span> 件のナレッジ${q?`（「${esc(q)}」の検索結果）`:""}</span>
+          <label>並び替え
+            <select onchange="setParam('sort',this.value==='std'?null:this.value)">
+              <option value="std" ${sort==="std"?"selected":""}>標準（ID順）</option>
+              <option value="liked" ${sort==="liked"?"selected":""}>♥ いいね済みを優先</option>
+            </select>
+          </label>
+        </div>
+        ${body}
+      </section>
+    </div>`;
+}
+
+/* ============================================================
+   詳細ページ
+============================================================ */
+function renderDetail(id){
+  const k = DATA.find(x=>x.id===id);
+  if(!k) return `<div style="text-align:center;padding:60px 0">
+    <p>指定されたナレッジが見つかりませんでした。</p><a href="#/">一覧に戻る</a></div>`;
+  const hex = CAT_HEX[k.category] || "#64748b";
+
+  const promptHtml = k.prompt
+    ? `<div class="prompt-box">
+        <div class="prompt-head">
+          <span>プロンプト全文（<b>{{黄色}}</b> の箇所があれば自分の情報に書き換えて使う）</span>
+          <button class="btn" onclick="copyPrompt('${k.id}')">📋 コピー</button>
+        </div>
+        <pre>${esc(k.prompt).replace(/\{\{([^}]+)\}\}/g,'<span class="pv">{{$1}}</span>')}</pre>
+      </div>`
+    : `<div class="no-prompt">この事例はプロンプト全文が未収録です（${k.hasPrompt==="簡易・記述のみ"?"簡易な記述のみ":"プロンプトなし"}）。${k.source?`詳細は出典（${esc(k.source)}）をご確認ください。`:""}</div>`;
+
+  const baHtml = (k.before || k.after) ? `
+    <div class="ba-grid">
+      <div class="ba">
+        <h2>Before ─ AI活用前</h2>
+        <p>${esc(k.before)||"（記載なし）"}</p>
+      </div>
+      <div class="ba after" style="border-color:${hex}66">
+        <h2>After ─ AI活用後 →</h2>
+        <p>${esc(k.after)||"（記載なし）"}</p>
+      </div>
+    </div>` : "";
+
+  // 関連：同一taskGroup(2点) + 同一カテゴリ(1点) の上位3件
+  const related = DATA.filter(x=>x.id!==k.id)
+    .map(x=>({x, s:(x.taskGroup===k.taskGroup?2:0)+(x.category===k.category?1:0)}))
+    .filter(o=>o.s>=2).sort((a,b)=>b.s-a.s).slice(0,3).map(o=>o.x);
+
+  return `<div class="detail">
+    <a class="back-link" href="#/">← 一覧に戻る</a>
+    <div>
+      <div class="crumb"><span>${esc(k.category)}</span><span>＞</span><b>${esc(k.taskGroup)}</b></div>
+      <h1>${esc(k.title)}</h1>
+      <div style="margin:10px 0 8px" class="badges">
+        <span class="badge" style="background:${hex}1a;color:${hex}">${esc(k.category)}</span>
+        ${k.tool.map(t=>`<span class="badge outline">${esc(t)}</span>`).join("")}
+        <span class="badge ${k.license==="無償版でも可"?"free":"paid"}">${esc(k.license)}</span>
+        <span class="badge phase">${esc(k.phase)}</span>
+      </div>
+      <div style="margin-top:8px">${likeBtnHtml(k.id,true)}</div>
+    </div>
+
+    ${k.catch?`<div class="lead">💡 ${esc(k.catch)}</div>`:""}
+
+    ${baHtml}
+
+    ${promptHtml}
+
+    ${k.tips?`<details class="acc" open><summary>💡 工夫・課題・コメント</summary><div class="acc-body">${esc(k.tips)}</div></details>`:""}
+    ${k.memo?`<details class="acc"><summary>📤 成果物・結果メモ</summary><div class="acc-body">${esc(k.memo)}</div></details>`:""}
+
+    ${k.source?`<div class="src-note">出典：${esc(k.source)}</div>`:""}
+
+    ${related.length?`<div><div class="section-label">関連するナレッジ</div><div class="cards">${related.map(x=>cardHtml(x)).join("")}</div></div>`:""}
+  </div>`;
+}
+
+/* ============================================================
+   ダッシュボード（個人・部署の比較は行わない：局全体の資産量のみ）
+============================================================ */
+function renderDashboard(){
+  const total = DATA.length;
+  const withPrompt = DATA.filter(k=>k.prompt).length;
+  const groups = new Set(DATA.map(k=>k.taskGroup)).size;
+
+  const byCat = CATS.filter(c=>DATA.some(k=>k.category===c)).map(cat=>({
+    name:cat, n:DATA.filter(k=>k.category===cat).length, hex:CAT_HEX[cat]
+  }));
+  const gmap = new Map();
+  DATA.forEach(k=> gmap.set(k.taskGroup,(gmap.get(k.taskGroup)||0)+1));
+  const byGroup = [...gmap.entries()].sort((a,b)=>b[1]-a[1]).slice(0,10)
+    .map(([name,n])=>({name,n,hex:"#2b5d9e"}));
+  const maxCat = Math.max(...byCat.map(b=>b.n),1);
+  const maxGrp = Math.max(...byGroup.map(b=>b.n),1);
+
+  const SHORT = {"ルーティーン・オペレーション業務":"ルーティーン・オペ"};
+  const bars = (rows,maxV) => rows.map(b=>`
+    <div class="hbar-row">
+      <span>${esc(SHORT[b.name]||b.name)}</span>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${b.n/maxV*100}%;background:${b.hex}"></div></div>
+      <span class="hbar-val">${b.n}件</span>
+    </div>`).join("");
+
+  return `<div class="dash">
+    <div>
+      <h1 style="font-size:20px">ダッシュボード</h1>
+      <p style="font-size:13px;color:var(--sub)">局全体で積み上がったAI活用資産の可視化です（個人・部署の比較は行いません）。</p>
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><span class="ic">📚</span><span><div class="lbl">登録ナレッジ数</div><div class="val">${total}件</div></span></div>
+      <div class="stat"><span class="ic">📋</span><span><div class="lbl">コピペ可能なプロンプト</div><div class="val">${withPrompt}件</div></span></div>
+      <div class="stat"><span class="ic">🗂</span><span><div class="lbl">カバーする業務大項目</div><div class="val">${groups}領域</div></span></div>
+      <div class="stat"><span class="ic">♥</span><span><div class="lbl">あなたがいいねした事例</div><div class="val">${likedCount()}件</div></span></div>
+    </div>
+    <div class="chart-card"><div class="section-label">カテゴリ別の登録件数</div>${bars(byCat,maxCat)}</div>
+    <div class="chart-card"><div class="section-label">業務大項目別の登録件数（上位10）</div>${bars(byGroup,maxGrp)}</div>
+    <div class="legend">${byCat.map(b=>`<span><span class="dot" style="background:${b.hex}"></span>${esc(b.name)}</span>`).join("")}</div>
+  </div>`;
+}
+
+/* ============================================================
+   使い方・ガイド
+============================================================ */
+const SUBMIT_FORMAT = `【3BP AIナレッジ 投稿フォーマット】
+※このままコピーして記入し、AI活用推進PJ事務局へ送付してください。
+※氏名・部署は事務局の確認用で、アプリの画面には表示されません。
+
+■ 業務名（title）：
+■ 業務カテゴリ（category）：提案業務／ルーティーン・オペレーション業務／メディア／企画／管理・総務 のいずれか
+■ タスクグループ（taskGroup）：例）提案資料作成、リサーチ、議事録作成、スケジュール調整
+■ ひとこと概要（catch）：「〇〇を渡すだけで、△△が出てくる」の形で1行
+■ 対応AIツール（tool）：Copilot／ChatGPT／Gemini／Canvas など
+■ ライセンス（license）：無償版でも可／有償版が必要
+■ AI活用前の状態（before・任意）：
+■ AI活用後の状態（after・任意）：
+■ プロンプト全文（prompt）：※そのままコピペで使える全文。可変箇所は {{クライアント名}} のように記載
+■ 工夫・課題・コメント（tips）：
+■ 成果物・結果メモ（memo・任意）：
+■ 氏名・部署（画面非表示・連絡用）：`;
+
+function renderGuide(){
+  const steps = [
+    ["業務を選ぶ","ホームの検索バーに自分の業務名（例：議事録、日程調整）を入れるか、カテゴリタイルから業務をたどります。"],
+    ["プロンプトをコピー","カード上の「プロンプトをコピー」ボタンを押すだけ。詳細ページを開かなくてもコピーできます。"],
+    ["AIに貼って自分用に調整","CopilotなどのAIツールに貼り付け、クライアント名や条件など自分の情報に書き換えて実行します。役に立ったら ♥ いいねを。"]
+  ];
+  return `<div class="guide">
+    <div>
+      <h1 style="font-size:20px">使い方・ガイド</h1>
+      <p style="font-size:13px;color:var(--sub)">はじめての方は3ステップでOK。まずは自分の業務名で検索してみてください。</p>
+    </div>
+    <div>
+      <div class="section-label">はじめての人向け3ステップ</div>
+      <div class="step-grid">
+        ${steps.map((s,i)=>`<div class="step"><div class="num">${i+1}</div><h3>${esc(s[0])}</h3><p>${esc(s[1])}</p></div>`).join("")}
+      </div>
+    </div>
+    <div class="warn">
+      <h2>🛡 情報の取り扱い注意（必ず守ってください）</h2>
+      <ul>
+        <li><b>クライアント機密情報・未公開情報</b>は、社内承認済みツール（Copilot等）以外に入力しない。</li>
+        <li>無償版ChatGPT・Gemini等の外部ツールを使う場合は、<b>クライアント名・数値・固有名詞を必ず伏せ字</b>（{{A社}} など）にする。</li>
+        <li><b>個人情報（氏名・連絡先・人事情報）</b>はいかなるツールにも入力しない。</li>
+        <li>各ナレッジの「工夫・課題・コメント」欄に個別の注意事項があるため、初回利用時は必ず確認する。</li>
+        <li>判断に迷う場合は、入力せずにAI活用推進PJ事務局に相談する。</li>
+      </ul>
+    </div>
+    <div>
+      <div class="section-label">♥ いいねについて</div>
+      <p style="font-size:12px;color:var(--sub)">
+        役に立った事例にはハートを押してください。押した事例は絞り込みの「いいねした事例のみ」からいつでも見返せます。
+        ※いいねはお使いのブラウザに保存される自分用のブックマークです（他の人には共有されません）。
+      </p>
+    </div>
+    <div>
+      <div class="section-label">📮 ナレッジを登録したい人へ</div>
+      <p style="font-size:12px;color:var(--sub);margin-bottom:10px">
+        「自分の工夫がほかの誰かの数時間を生む」のがこのアプリの目的です。
+        以下のフォーマットをコピーして記入し、AI活用推進PJ事務局へ送付してください。小さな効率化でも大歓迎です。
+      </p>
+      <div class="format-box">
+        <div class="format-head"><span>投稿フォーマット</span><button class="btn" onclick="copyFormat()">📋 フォーマットをコピー</button></div>
+        <pre>${esc(SUBMIT_FORMAT)}</pre>
+      </div>
+    </div>
+  </div>`;
+}
+function copyFormat(){ copyText(SUBMIT_FORMAT); }
+
+/* ============================================================
+   ナレッジデータの読み込み（同じフォルダのExcelファイルから取得）
+   ─ 追加・修正は 3BP_AIナレッジ_データ.xlsx を編集するだけでOKです。
+   ─ HTMLファイルとExcelファイルは必ず同じフォルダに置いてください。
+============================================================ */
+function showLoading(msg){
+  const app = document.getElementById("app");
+  if(app) app.innerHTML = `<div style="text-align:center;padding:80px 20px;color:var(--sub);font-size:13px;">${esc(msg)}</div>`;
+}
+
+function showLoadError(err){
+  const app = document.getElementById("app");
+  if(!app) return;
+  app.innerHTML = `
+    <div style="max-width:560px;margin:60px auto;text-align:center;">
+      <p style="font-weight:700;font-size:14px;margin-bottom:10px;">データファイルを自動で読み込めませんでした</p>
+      <p style="font-size:12px;color:var(--sub);margin-bottom:6px;">
+        「index.html」をブラウザで直接ダブルクリックで開いた場合、セキュリティ制限のため
+        同じフォルダの「3BP_AIナレッジ_データ.xlsx」を自動で読み込めないことがあります。
+      </p>
+      <p style="font-size:12px;color:var(--sub);margin-bottom:18px;">
+        下のボタンから「3BP_AIナレッジ_データ.xlsx」を選び直すか、ローカルサーバー経由や
+        社内サイトへのアップロード経由でこのページを開いてください。
+      </p>
+      <input type="file" id="xlsxPicker" accept=".xlsx" style="margin:0 auto;display:block;">
+      <p style="font-size:11px;color:var(--faint);margin-top:14px;">(詳細エラー: ${esc(String(err && err.message || err || ""))})</p>
+    </div>`;
+  const picker = document.getElementById("xlsxPicker");
+  if(picker){
+    picker.addEventListener("change", e=>{
+      const file = e.target.files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = ev=>{
+        try{
+          const wb = XLSX.read(ev.target.result, {type:"array"});
+          const sheet = wb.Sheets[DATA_SHEET_NAME] || wb.Sheets[wb.SheetNames[0]];
+          const rows = XLSX.utils.sheet_to_json(sheet, {defval:""});
+          DATA = rowsToData(rows);
+          buildSearchIndex();
+          render();
+        }catch(err2){
+          alert("Excelファイルの読み込みに失敗しました："+err2.message);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    });
+  }
+}
+
+async function loadData(){
+  showLoading("ナレッジデータを読み込み中…");
+  try{
+    const res = await fetch(DATA_XLSX_PATH);
+    if(!res.ok) throw new Error("HTTP "+res.status);
+    const buf = await res.arrayBuffer();
+    const wb = XLSX.read(buf, {type:"array"});
+    const sheet = wb.Sheets[DATA_SHEET_NAME] || wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, {defval:""});
+    DATA = rowsToData(rows);
+    buildSearchIndex();
+    render();
+  }catch(err){
+    console.warn("Excel自動読み込みに失敗:", err);
+    showLoadError(err);
+  }
+}
+
+/* ============================================================
+   ルーター本体
+============================================================ */
+function render(){
+  const {path, params} = parseHash();
+  const app = document.getElementById("app");
+  let view = "home";
+  if(path.startsWith("knowledge/")){
+    app.innerHTML = renderDetail(decodeURIComponent(path.split("/")[1]));
+    view = "home";
+    window.scrollTo(0,0);
+  } else if(path==="dashboard"){
+    app.innerHTML = renderDashboard(); view="dashboard";
+  } else if(path==="guide"){
+    app.innerHTML = renderGuide(); view="guide";
+  } else {
+    app.innerHTML = renderHome(params);
+    const inp = document.getElementById("search");
+    if(inp){
+      const apply = target=>{
+        const pos = target.selectionStart;
+        setParam("q", target.value);
+        // 再描画後にフォーカスとカーソル位置を復元
+        requestAnimationFrame(()=>{
+          const el=document.getElementById("search");
+          if(el){ el.focus(); el.setSelectionRange(pos,pos); }
+        });
+      };
+      // 日本語IME変換中は再描画しない（変換確定時にまとめて反映）
+      inp.addEventListener("input", e=>{ if(!e.isComposing) apply(e.target); });
+      inp.addEventListener("compositionend", e=> apply(e.target));
+    }
+  }
+  document.querySelectorAll("nav.main a").forEach(a=>{
+    a.classList.toggle("active", a.dataset.nav===view);
+  });
+}
+
+// 「/」で検索フォーカス、「Esc」でクリア
+window.addEventListener("keydown", e=>{
+  const tag = document.activeElement ? document.activeElement.tagName : "";
+  if(e.key==="/" && tag!=="INPUT" && tag!=="TEXTAREA" && tag!=="SELECT"){
+    e.preventDefault();
+    const inp = document.getElementById("search");
+    if(inp) inp.focus(); else location.hash="#/";
+  }
+  if(e.key==="Escape" && document.getElementById("search")){
+    setParam("q", null);
+  }
+});
+
+window.addEventListener("hashchange", render);
+loadData();
+</script>
+</body>
+</html>
